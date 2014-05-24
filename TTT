@@ -1,0 +1,97 @@
+#!/usr/bin/env ruby
+require 'pry'
+class Board 
+  X = ?X
+  O = ?O
+  EMPTY = ?\s
+  def initialize
+    #board works like this:
+    #0 1 2
+    #3 4 5
+    #6 7 8
+    @board = (1..9).to_a
+    @layout= {
+      row:{ top:[0,1,2], center:[3,4,5], bottom:[6,7,8] },
+      column:{ left:[0,3,6], center:[1,4,7], right:[2,5,8] },
+      diagonal:{ fslash:[6,4,2], bslash:[0,4,8] }
+    }
+  end
+  def [](index)
+    @board[index]
+  end
+  def []=(index, value)
+    @board[index] = value 
+  end
+  def get(structure, orientation = nil)
+      if indices = @layout[structure][orientation]
+        indices.map { |i| @board[i] }
+      else
+        @layout[structure].keys.map { |key| get structure, key }
+      end
+  end
+  def full?
+    @board.all? { |space| space == ?X || space == ?O }
+  end
+  def find_winner
+    (get(:row) + get(:column) + get(:diagonal)).find do |structure|
+      structure.all? { |square| square == ?X } ||
+      structure.all? { |square| square == ?O }
+    end
+  end
+  def complete?
+    !!find_winner || draw?
+  end
+  def to_s
+<<STRING
+\ec
+     #{@board[0]} | #{@board[1]} | #{@board[2]}
+    ---+---+---
+     #{@board[3]} | #{@board[4]} | #{@board[5]}
+    ---+---+---
+     #{@board[6]} | #{@board[7]} | #{@board[8]}
+STRING
+  end
+end
+
+class Game
+  def initialize
+    @board = Board.new
+    @turn = [?X, ?O]
+  end
+  def play
+    player = @turn.shift
+    @board[next_turn player] = player
+    @turn.push player
+  end
+  def next_turn(player)
+    loop do
+      puts @board
+      print "Player #{player}'s turn: "
+
+      if input = gets.chomp[/^[1-9]$/]
+        #puts "got valid input: #{input}"; sleep 1
+        input = input.to_i - 1
+        if  /[1-9]/ =~ @board[input].to_s
+          #puts "got valid square: #{@board[input]}"; sleep 1
+          return input
+        end
+      end
+    end
+  end 
+
+  def over?
+    @board.full? || !!@board.find_winner
+  end
+  
+  def exit
+    puts @board
+    winner = @board.find_winner
+    winner = winner ? winner.first : 'Nobody'
+    puts "#{winner} wins!"
+  end
+end
+
+game = Game.new
+game.play until game.over?
+game.exit
+     
